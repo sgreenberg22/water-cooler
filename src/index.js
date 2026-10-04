@@ -175,7 +175,7 @@ function packSpec(key) {
 const inflight = new Map();
 
 async function getPack(key, day, env, ctx) {
-  const kvKey = `pack:${day}:${key}`;
+  const kvKey = `pack:v2:${day}:${key}`;
   if (env.TALK_KV) {
     const cached = await env.TALK_KV.get(kvKey, 'json');
     if (cached) return { ...cached, cached: true };
@@ -267,7 +267,10 @@ export function parseRss(xml) {
     const sig = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ').slice(0, 6).join(' ');
     if (seen.has(sig)) continue;
     seen.add(sig);
-    out.push({ title, source, link, pub });
+    let desc = decode(pick(block, 'description') || pick(block, 'summary')).replace(/\s+/g, ' ').trim();
+    if (desc.toLowerCase().startsWith(title.toLowerCase().slice(0, 30))) desc = ''; // Google News just repeats the title
+    if (desc.length > 220) desc = desc.slice(0, 219).replace(/\s+\S*$/, '') + '…';
+    out.push({ title, source, link, pub, desc });
   }
   return out;
 }
@@ -309,7 +312,13 @@ const POINT_SCHEMA = {
           idx: { type: 'integer' },
           headline: { type: 'string' },
           emoji: { type: 'string' },
+          what: { type: 'string' },
           nod: { type: 'string' },
+          nods: {
+            type: 'object',
+            properties: { dry: { type: 'string' }, dad: { type: 'string' }, cynical: { type: 'string' }, observational: { type: 'string' } },
+            required: ['dry', 'dad', 'cynical', 'observational'],
+          },
           takes: {
             type: 'object',
             properties: {
@@ -324,7 +333,7 @@ const POINT_SCHEMA = {
           ask: { type: 'string' },
           spice: { type: 'integer' },
         },
-        required: ['idx', 'headline', 'nod', 'takes', 'deep', 'ask', 'spice'],
+        required: ['idx', 'headline', 'what', 'nod', 'nods', 'takes', 'deep', 'ask', 'spice'],
       },
     },
   },
@@ -334,7 +343,7 @@ const POINT_SCHEMA = {
 function buildUserPrompt(spec, headlines) {
   const list = headlines
     .slice(0, 12)
-    .map((h, i) => `${i + 1}. ${h.title}${h.source ? ` (${h.source})` : ''}`)
+    .map((h, i) => `${i + 1}. ${h.title}${h.source ? ` (${h.source})` : ''}${h.desc ? `\n   About: ${h.desc}` : ''}`)
     .join('\n');
   const flavor =
     spec.kind === 'team'
@@ -355,7 +364,9 @@ For each return:
 - idx: the headline number
 - headline: the story in 12 words or less, plain English
 - emoji: one emoji that fits
-- nod: 15 words max. A low-effort line that lets you survive with a nod.
+- what: 25 words max. What actually happened, in plain neutral words, so someone who missed the news understands it. Only facts from the headline/About text.
+- nod: 15 words max. A low-effort neutral line that lets you survive with a nod.
+- nods: the same low-effort nod, one per humor style, 15 words max each: dry, dad, cynical, observational
 - takes: one line in each humor style, 22 words max each:
     dry (deadpan understatement), dad (a pun or groaner), cynical (eye-roll, still kind), observational (the relatable absurd detail)
 - deep: 30 words max. One angle that makes you sound informed. Hedge anything you're unsure of.
@@ -397,14 +408,14 @@ async function callWorkersAI(env, user) {
   try {
     res = await env.AI.run(model, {
       messages,
-      max_tokens: 1600,
+      max_tokens: 2200,
       temperature: 0.8,
       response_format: { type: 'json_schema', json_schema: POINT_SCHEMA },
     });
   } catch (e) {
     // Some models don't support JSON mode; try once more as plain text.
     if (/quota|limit|neuron|429|capacity/i.test(String(e && e.message))) throw e;
-    res = await env.AI.run(model, { messages, max_tokens: 1600, temperature: 0.8 });
+    res = await env.AI.run(model, { messages, max_tokens: 2200, temperature: 0.8 });
   }
   return res && (res.response ?? res.result?.response ?? res);
 }
@@ -419,7 +430,7 @@ async function callAnthropic(env, user) {
     },
     body: JSON.stringify({
       model: env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
-      max_tokens: 1600,
+      max_tokens: 2200,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: user }],
     }),
@@ -452,7 +463,14 @@ export function cleanPoints(raw, headlines) {
     const point = {
       headline: clip(p.headline || (h && h.title), 110),
       emoji: clip(p.emoji, 4) || '💬',
+      what: clip(p.what || (h && h.desc), 220),
       nod: clip(p.nod, 140),
+      nods: {
+        dry: clip(p.nods && p.nods.dry, 140),
+        dad: clip(p.nods && p.nods.dad, 140),
+        cynical: clip(p.nods && p.nods.cynical, 140),
+        observational: clip(p.nods && p.nods.observational, 140),
+      },
       takes: {
         dry: clip(takes.dry, 180),
         dad: clip(takes.dad, 180),
@@ -469,6 +487,7 @@ export function cleanPoints(raw, headlines) {
     if (GRIM.test(point.headline)) continue;
     const anyTake = point.takes.dry || point.takes.dad || point.takes.cynical || point.takes.observational || point.nod;
     for (const k of Object.keys(point.takes)) if (!point.takes[k]) point.takes[k] = anyTake;
+    for (const k of Object.keys(point.nods)) if (!point.nods[k]) point.nods[k] = point.nod;
     if (used.has(point.headline)) continue;
     used.add(point.headline);
     out.push(point);
@@ -487,7 +506,14 @@ export function templatePack(spec, headlines) {
     return {
       headline: h.title,
       emoji: spec.emoji,
+      what: h.desc || '',
       nod: pickOne([`Did you see the thing about ${short}? Wild.`, `So… ${short}. Huh.`, `Apparently ${short}. What a week.`], seed),
+      nods: {
+        dry: `Saw the ${short} thing. Riveting.`,
+        dad: `Did you hear about ${short}? Headline of the year.`,
+        cynical: `${short}. Sure. Why not.`,
+        observational: `Everyone's talking about ${short}, huh?`,
+      },
       takes: {
         dry: pickOne([`Saw "${short}". Riveting stuff. Truly.`, `"${short}." Not how I expected today to go, but okay.`], seed),
         dad: pickOne([`"${short}" — I'd make a joke, but I'm still workshopping it.`, `"${short}." Headline writers are really earning their coffee today.`], seed),

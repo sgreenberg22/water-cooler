@@ -192,7 +192,11 @@ input { font: inherit; color: inherit; }
 .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: var(--cat); color: var(--tag-ink); font-family: var(--mono); font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spice { font-size: .8rem; letter-spacing: -2px; }
-.headline { margin: 12px 0 10px; font-weight: 600; color: var(--muted); font-size: .95rem; line-height: 1.35; display: flex; gap: 8px; }
+.story { margin: 12px 0 12px; display: grid; gap: 6px; }
+.headline { margin: 0; font-weight: 800; color: var(--ink); font-size: 1rem; line-height: 1.35; display: flex; gap: 8px; }
+.what { margin: 0 0 0 30px; color: var(--muted); font-size: .92rem; line-height: 1.45; }
+.src { margin: 0 0 0 30px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-family: var(--mono); font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.src a { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--cat); text-decoration-thickness: 2px; text-underline-offset: 3px; padding: 4px 0; }
 .headline .pe { font-size: 1.3rem; line-height: 1; flex: none; }
 .say { background: color-mix(in oklab, var(--cat) 17%, var(--surface)); border-radius: 16px; padding: 12px 14px 14px; }
 .say .mono { color: var(--muted); display: block; margin-bottom: 4px; }
@@ -217,7 +221,7 @@ details.deeper[open] summary::before { transform: rotate(45deg); }
 .rate-opts .act:nth-child(2) { animation-delay: .05s; } .rate-opts .act:nth-child(3) { animation-delay: .1s; }
 .rated-note { font-size: .82rem; color: var(--muted); }
 .stamp {
-  position: absolute; right: 12px; top: 10px; pointer-events: none; background: var(--surface); font-family: var(--mono); font-weight: 600;
+  position: absolute; right: 12px; top: 8px; pointer-events: none; background: var(--surface); font-family: var(--mono); font-weight: 600;
   font-size: .82rem; letter-spacing: .1em; padding: 6px 10px; border: 3px solid currentColor; border-radius: 8px;
   transform: rotate(-14deg); opacity: .85; mix-blend-mode: normal;
 }
@@ -516,6 +520,26 @@ const DEMO = {
     { id: 'd-we-3', emoji: '🍕', headline: 'Someone ranked every pizza style and the comments are a war zone', nod: 'Did you see the pizza ranking fight?', takes: { dry: 'Thin crust versus deep dish. Choose your side carefully.', dad: 'It was a pie ranking, so of course it got cheesy.', cynical: 'The internet finally found something worth fighting about.', observational: 'Ask any local and they secretly order tavern-style more than deep dish.' }, deep: 'Tavern-style, the thin cracker crust cut into squares, is what a lot of Chicagoans actually order on a regular night.', ask: 'Deep dish, thin crust, or something weirder?', spice: 2 },
   ],
 };
+
+const DEMO_EXTRA = {
+  'd-top-1': ['Daylight saving time ends the first Sunday in November, and the yearly argument about early sunsets is starting up again.', ['Dark at 4:30 soon. Can\'t wait.', 'Time to fall back. I\'m already falling behind.', 'Ah yes, five months of night.', 'Everyone\'s about to act shocked by the sunset again.']],
+  'd-top-2': ['Grocery prices keep inching up, with eggs and staples getting the most attention.', ['Groceries cost a fortune now. Fun.', 'Egg prices? I\'m shell-shocked.', 'Pay more, get less. Classic.', 'Everyone has a grocery strategy now.']],
+  'd-top-3': ['A phone software update rearranged a commonly used control, and people are hunting for it.', ['My phone moved everything. Thrilling.', 'Update moved my button. I\'m beside myself.', 'They moved it on purpose, I swear.', 'Everyone\'s poking around their phone today.']],
+  'd-sp-1': ['Early in the NFL season, Bears fans are already working out what it takes to reach the playoffs.', ['Playoff math in October. Sure.', 'Bears playoff math? Un-bear-able.', 'Here we go again with the hope.', 'Everyone\'s a Bears analyst on Mondays.']],
+  'd-sp-2': ['Baseball\'s postseason is underway, and casual fans are tuning in for the high-stakes games.', ['Playoff baseball. Very tense. Apparently.', 'I\'m pitching in on watching.', 'Baseball fans for exactly one month.', 'Rally caps are back, huh?']],
+  'd-sp-3': ['The NBA regular season starts in late October, so preseason news and predictions are everywhere.', ['Basketball\'s back. Long games ahead.', 'Ready for a slam-dunk season.', '82 games of hope, then injuries.', 'Trade rumors already, right?']],
+  'd-te-1': ['Workplace software keeps adding AI assistants, sometimes stacked inside other AI tools.', ['Everything has AI now. Great.', 'My AI has an AI. It\'s a-mazing.', 'More AI, same meetings.', 'Every app grew a sparkle button.']],
+  'd-te-2': ['New phones are advertising longer battery life, mostly thanks to more efficient chips and screens.', ['Two-day batteries. We\'ll see.', 'I\'m positively charged about it.', 'Two days until it\'s two hours.', 'Someone\'s always at 4%, right?']],
+  'd-te-3': ['More apps and sites now let you sign in with passkeys, which use your device\'s lock screen instead of a password.', ['Passkeys. Another thing to set up.', 'Passkeys are the key to my heart.', 'Can\'t wait to lose my passkey.', 'Is anyone actually using passkeys yet?']],
+  'd-we-1': ['A territorial duck has taken over an office pond and won\'t let anyone near it.', ['The duck runs this place now.', 'That duck is quackers.', 'Duck\'s more decisive than management.', 'Somebody named that duck, guaranteed.']],
+  'd-we-2': ['Fall giant-pumpkin contests are underway, with growers chasing entries over 2,000 pounds.', ['Giant pumpkins. Big week for them.', 'Those growers know their gourds.', 'That pumpkin eats better than me.', 'There\'s always one tired guy next to it.']],
+  'd-we-3': ['An online ranking of pizza styles set off a heated argument, especially over deep dish versus thin crust.', ['Pizza wars. Riveting.', 'That ranking got pretty cheesy.', 'The internet found a new fight.', 'Everyone has a pizza opinion today.']],
+};
+const HUMOR_KEYS = ['dry', 'dad', 'cynical', 'observational'];
+for (const list of Object.values(DEMO)) for (const pt of list) {
+  const [what, nods] = DEMO_EXTRA[pt.id] || ['', []];
+  pt.what = what; pt.nods = Object.fromEntries(HUMOR_KEYS.map((k, i) => [k, nods[i] || pt.nod]));
+}
 const DEMO_FOR = { top: 'top', politics: 'top', business: 'top', sports: 'sports', tech: 'tech', science: 'tech', gaming: 'tech', weird: 'weird', food: 'weird', entertainment: 'weird' };
 const DEMO_WEATHER = { temp: 54, code: 3, wind: 13 };
 const DEFAULT_PROFILE = { name: '', city: 'Chicago', teams: ['Chicago Bears'], noSports: false, interests: ['tech', 'weird'], humor: 'dry', hobbies: [], time: 'coffee' };
@@ -891,7 +915,7 @@ function selection() {
 /* =============================================================== cards */
 const CAT_VARS = ['--a1', '--a2', '--a3', '--a4', '--a5'];
 function catVar(key) { const i = Math.max(0, S.plan.findIndex((x) => x.key === key)); return `var(${CAT_VARS[i % CAT_VARS.length]})`; }
-function lineFor(pt) { return S.mode === 'nod' ? pt.nod : (pt.takes && pt.takes[S.humor]) || pt.nod; }
+function lineFor(pt) { return S.mode === 'nod' ? (pt.nods && pt.nods[S.humor]) || pt.nod : (pt.takes && pt.takes[S.humor]) || pt.nod; }
 function makeCard(pt, key, i) {
   const pack = S.packs[key];
   const rating = getRatings()[pt.id];
@@ -901,14 +925,19 @@ function makeCard(pt, key, i) {
   const safeLink = /^https?:\/\//.test(pt.link || '') ? pt.link : null;
   el.append(
     h('div', { class: 'card-top' }, h('span', { class: 'tag', text: `${pack.emoji || '💬'} ${pack.label}` }), h('span', { class: 'spice', title: `Spice level ${pt.spice || 1} of 3`, 'aria-label': `Spice level ${pt.spice || 1} of 3`, text: spice })),
-    h('p', { class: 'headline' }, h('span', { class: 'pe', text: pt.emoji || '💬' }), h('span', { text: pt.headline })),
-    h('div', { class: 'say' }, h('span', { class: 'mono', text: S.mode === 'nod' ? 'Say this' : `Say this · ${HUMORS[S.humor].label}` }), h('p', { class: 'say-line', text: lineFor(pt) })),
+    h('div', { class: 'story' },
+      h('p', { class: 'headline' }, h('span', { class: 'pe', text: pt.emoji || '💬' }), h('span', { text: pt.headline })),
+      pt.what ? h('p', { class: 'what', text: pt.what }) : null,
+      (safeLink || pt.source) ? h('p', { class: 'src' },
+        pt.source ? h('span', { text: pt.source }) : null,
+        safeLink ? h('a', { href: safeLink, target: '_blank', rel: 'noopener', text: 'Read the article ↗' }) : null) : null),
+    h('div', { class: 'say' }, h('span', { class: 'mono', text: `${S.mode === 'nod' ? 'Quick nod' : 'Your take'} · ${HUMORS[S.humor].label}` }), h('p', { class: 'say-line', text: lineFor(pt) })),
     h('details', { class: 'deeper' },
       h('summary', { text: 'Go deeper' }),
       h('div', { class: 'deep-body' },
         pt.deep ? h('p', null, h('b', { text: 'Sound informed' }), pt.deep) : null,
         pt.ask ? h('p', null, h('b', { text: 'Hand it back' }), `"${pt.ask}"`) : null,
-        safeLink ? h('a', { href: safeLink, target: '_blank', rel: 'noopener', text: `Read it${pt.source ? ` on ${pt.source}` : ''} ↗` }) : (pt.source ? h('span', { class: 'small', text: `Source: ${pt.source}` }) : null))),
+        null)),
     h('div', { class: 'card-actions' }),
   );
   if (S.mode === 'opinion' && activeProfile().time === 'lunch') $('details', el).open = true;
@@ -980,7 +1009,7 @@ function refreshLines() {
   document.querySelectorAll('#cards .card[data-id]').forEach((el) => {
     const rec = S.points.get(el.dataset.id); if (!rec) return;
     const line = $('.say-line', el); line.textContent = lineFor(rec.pt);
-    $('.say .mono', el).textContent = S.mode === 'nod' ? 'Say this' : `Say this · ${HUMORS[S.humor].label}`;
+    $('.say .mono', el).textContent = `${S.mode === 'nod' ? 'Quick nod' : 'Your take'} · ${HUMORS[S.humor].label}`;
     line.classList.remove('flip'); void line.offsetWidth; line.classList.add('flip');
   });
 }
