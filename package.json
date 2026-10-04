@@ -1,0 +1,15 @@
+{
+  "name": "water-cooler",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Daily small-talk ammo. Cloudflare Worker + Workers AI + KV, free tier.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/worker.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.147.0"
+  }
+}
