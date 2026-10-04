@@ -86,3 +86,20 @@ assert.equal(aiCalls, 2);
 assert.ok([...store.keys()].some((k) => k.startsWith('news:') && k.endsWith('cat:gaming')));
 
 console.log('✅ all worker tests passed');
+
+// Atom feeds and Bing's <News:Source>
+const atom = `<feed><entry><title>Studio announces sequel to surprise indie hit</title><link rel="alternate" href="https://example.com/x"/><updated>2026-10-03</updated></entry></feed>`;
+const a = parseRss(atom);
+assert.equal(a.length, 1); assert.equal(a[0].link, 'https://example.com/x');
+const bingXml = `<rss><channel><item><title>Cubs announce new manager search begins</title><link>https://bing.com/x</link><News:Source>Chicago Sun-Times</News:Source></item></channel></rss>`;
+assert.equal(parseRss(bingXml)[0].source, 'Chicago Sun-Times');
+
+// Google blocked -> falls through to the next source
+store.clear();
+let hits = [];
+globalThis.fetch = async (u) => { hits.push(new URL(u).hostname); return u.includes('news.google.com') ? new Response('nope', { status: 403 }) : new Response(rss, { status: 200 }); };
+const dj = await (await worker.fetch(new Request('https://x/api/debug?key=cat:top'), env, ctx)).json();
+assert.equal(dj.sources[0].status, 403);
+assert.equal(dj.sources[1].headlines, 3);
+assert.deepEqual(hits.slice(0, 2), ['news.google.com', 'feeds.npr.org']);
+console.log('✅ fallback source tests passed');

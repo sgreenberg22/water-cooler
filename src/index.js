@@ -23,19 +23,21 @@ const GN = 'hl=en-US&gl=US&ceid=US:en';
 const gnTop = () => `https://news.google.com/rss?${GN}`;
 const gnTopic = (t) => `https://news.google.com/rss/headlines/section/topic/${t}?${GN}`;
 const gnSearch = (q) => `https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:2d')}&${GN}`;
+// Backup source: Bing News RSS (Google sometimes blocks cloud servers).
+const bing = (q) => `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&setlang=en-US&cc=US`;
 
 // Built-in categories. Teams, hobbies and cities are dynamic packs (see packSpec).
 const CATEGORIES = {
-  top:           { label: 'Big News',      emoji: '🗞️', feed: gnTop() },
-  politics:      { label: 'Politics',      emoji: '🏛️', feed: gnTopic('NATION') },
-  tech:          { label: 'Tech',          emoji: '💻', feed: gnTopic('TECHNOLOGY') },
-  business:      { label: 'Money & Biz',   emoji: '💼', feed: gnTopic('BUSINESS') },
-  entertainment: { label: 'TV & Movies',   emoji: '🎬', feed: gnTopic('ENTERTAINMENT') },
-  science:       { label: 'Science',       emoji: '🔬', feed: gnTopic('SCIENCE') },
-  sports:        { label: 'Sports',        emoji: '🏆', feed: gnTopic('SPORTS') },
-  weird:         { label: 'Weird News',    emoji: '🦆', feed: gnSearch('odd news') },
-  food:          { label: 'Food',          emoji: '🌮', feed: gnSearch('restaurant food trend') },
-  gaming:        { label: 'Gaming',        emoji: '🎮', feed: gnSearch('video games') },
+  top:           { label: 'Big News',    emoji: '🗞️', feeds: [gnTop(), 'https://feeds.npr.org/1001/rss.xml', bing('top news')] },
+  politics:      { label: 'Politics',    emoji: '🏛️', feeds: [gnTopic('NATION'), 'https://feeds.npr.org/1014/rss.xml', bing('politics')] },
+  tech:          { label: 'Tech',        emoji: '💻', feeds: [gnTopic('TECHNOLOGY'), 'https://feeds.arstechnica.com/arstechnica/index', bing('technology')] },
+  business:      { label: 'Money & Biz', emoji: '💼', feeds: [gnTopic('BUSINESS'), 'https://feeds.npr.org/1006/rss.xml', bing('business')] },
+  entertainment: { label: 'TV & Movies', emoji: '🎬', feeds: [gnTopic('ENTERTAINMENT'), 'https://feeds.npr.org/1008/rss.xml', bing('entertainment movies tv')] },
+  science:       { label: 'Science',     emoji: '🔬', feeds: [gnTopic('SCIENCE'), 'https://feeds.npr.org/1007/rss.xml', bing('science')] },
+  sports:        { label: 'Sports',      emoji: '🏆', feeds: [gnTopic('SPORTS'), 'https://www.espn.com/espn/rss/news', bing('sports')] },
+  weird:         { label: 'Weird News',  emoji: '🦆', feeds: [gnSearch('odd news'), 'https://rss.upi.com/news/odd_news.rss', bing('odd news')] },
+  food:          { label: 'Food',        emoji: '🌮', feeds: [gnSearch('restaurant food trend'), 'https://feeds.npr.org/1053/rss.xml', bing('food restaurants')] },
+  gaming:        { label: 'Gaming',      emoji: '🎮', feeds: [gnSearch('video games'), 'https://www.polygon.com/rss/index.xml', bing('video games')] },
 };
 
 // Headlines nobody should be joking about at the coffee machine.
@@ -56,6 +58,18 @@ export default {
       if (path === '/api/pack' && request.method === 'GET') return await handlePack(url, env, ctx);
       if (path === '/api/rate' && request.method === 'POST') return await handleRate(request, env);
       if (path === '/api/stats' && request.method === 'GET') return await handleStats(env);
+      if (path === '/api/debug') {
+        const key = normalizeKey(url.searchParams.get('key') || 'cat:top');
+        if (!key) return json({ error: 'Bad pack key' }, 400);
+        const report = [];
+        const items = await getHeadlines(key, dayKey(), env, report);
+        let ai = 'not tried';
+        if (url.searchParams.get('ai') === '1' && items.length) {
+          try { const r = await callWorkersAI(env, buildUserPrompt(packSpec(key), items)); ai = cleanPoints(r, items).length + ' points'; }
+          catch (e) { ai = 'error: ' + (e && e.message || e); }
+        }
+        return json({ key, sources: report, sample: items.slice(0, 3).map((i) => i.title), ai });
+      }
       if (path === '/api/health') {
         return json({
           ok: true,
@@ -153,9 +167,9 @@ function packSpec(key) {
   const [kind, name] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
   const title = name.replace(/\b\w/g, (c) => c.toUpperCase());
   if (kind === 'cat') return { kind, ...CATEGORIES[name], name };
-  if (kind === 'team') return { kind, name, label: title, emoji: '🏟️', feed: gnSearch(`"${name}"`) };
-  if (kind === 'local') return { kind, name, label: `${title} Local`, emoji: '📍', feed: gnSearch(`${name} local news`) };
-  return { kind, name, label: title, emoji: '✨', feed: gnSearch(name) };
+  if (kind === 'team') return { kind, name, label: title, emoji: '🏟️', feeds: [gnSearch(`"${name}"`), bing(`"${name}"`)] };
+  if (kind === 'local') return { kind, name, label: `${title} Local`, emoji: '📍', feeds: [gnSearch(`${name} local news`), bing(`${name} news`)] };
+  return { kind, name, label: title, emoji: '✨', feeds: [gnSearch(name), bing(name)] };
 }
 
 const inflight = new Map();
@@ -195,22 +209,34 @@ async function getPack(key, day, env, ctx) {
 
 /* -------------------------------------------------------------- headlines */
 
-async function getHeadlines(key, day, env) {
+async function getHeadlines(key, day, env, report) {
   const kvKey = `news:${day}:${key}`;
-  if (env.TALK_KV) {
+  if (env.TALK_KV && !report) {
     const cached = await env.TALK_KV.get(kvKey, 'json');
-    if (cached) return cached;
+    if (cached && cached.length) return cached;
   }
   const spec = packSpec(key);
   let items = [];
-  try {
-    const res = await fetch(spec.feed, {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; WaterCoolerBot/1.0)' },
-      cf: { cacheTtl: 900, cacheEverything: true },
-    });
-    if (res.ok) items = parseRss(await res.text());
-  } catch (e) {
-    console.error('feed failed', key, e);
+  // Try each source in order until one gives us enough headlines.
+  for (const url of spec.feeds) {
+    const host = new URL(url).hostname;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36',
+          accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+        },
+        redirect: 'follow',
+        cf: { cacheTtl: 900 },
+      });
+      const found = res.ok ? parseRss(await res.text()) : [];
+      if (report) report.push({ source: host, status: res.status, headlines: found.length });
+      if (found.length > items.length) items = found;
+      if (items.length >= 4) break;
+    } catch (e) {
+      if (report) report.push({ source: host, error: String(e && e.message || e) });
+      console.error('feed failed', key, host, e);
+    }
   }
   if (env.TALK_KV && items.length) {
     try { await env.TALK_KV.put(kvKey, JSON.stringify(items), { expirationTtl: KV_TTL }); } catch {}
@@ -223,14 +249,14 @@ export function parseRss(xml) {
   const text = xml.slice(0, 60000);
   const out = [];
   const seen = new Set();
-  const itemRe = /<item>([\s\S]*?)<\/item>/g;
+  const itemRe = /<(item|entry)\b[^>]*>([\s\S]*?)<\/\1>/g;
   let m;
   while ((m = itemRe.exec(text)) && out.length < 14) {
-    const block = m[1];
+    const block = m[2];
     const rawTitle = decode(pick(block, 'title'));
-    const source = decode(pick(block, 'source')) || '';
-    const link = decode(pick(block, 'link'));
-    const pub = pick(block, 'pubDate');
+    const source = decode(pick(block, 'source') || pick(block, 'News:Source')) || '';
+    const link = decode(pick(block, 'link')) || ((/<link[^>]*href="([^"]+)"/.exec(block) || [])[1] || '');
+    const pub = pick(block, 'pubDate') || pick(block, 'updated');
     let title = rawTitle;
     // Google News appends " - Source Name"
     if (source && title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3));

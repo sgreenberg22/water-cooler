@@ -833,8 +833,10 @@ async function loadPacks() {
       S.packs[key] = { status: 'ok', label: j.label, emoji: j.emoji, source: j.source, points: j.points || [], role };
       const c = store.get('packs', null);
       const data = c && c.day === (j.day || day) ? c.data : {};
-      data[key] = { label: j.label, emoji: j.emoji, source: j.source, points: j.points };
-      store.set('packs', { day: j.day || day, data });
+      if (j.points && j.points.length) {
+        data[key] = { label: j.label, emoji: j.emoji, source: j.source, points: j.points };
+        store.set('packs', { day: j.day || day, data });
+      }
     } catch {
       S.packs[key] = { ...S.packs[key], status: 'error', points: [] };
     }
@@ -971,7 +973,7 @@ function renderCards(fresh) {
     S.points.set(o.pt.id, { pt: o.pt, key: o.key });
     return existing.get(o.pt.id) || makeCard(o.pt, o.key, i);
   });
-  if (!nodes.length) nodes.push(h('div', { class: 'card skeleton' }, h('div', { text: '📭' }), h('div', { text: 'The news is quiet today. Try Eject for a never-fail line.' })));
+  if (!nodes.length) nodes.push(h('div', { class: 'card skeleton' }, h('div', { text: '📭' }), h('div', { text: "Couldn't reach the news just now. Try again in a minute; Eject still works." }), h('button', { class: 'btn-sm', onclick: () => loadPacks(), text: 'Retry' })));
   box.replaceChildren(...nodes);
 }
 function refreshLines() {
