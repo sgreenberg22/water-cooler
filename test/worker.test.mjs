@@ -103,3 +103,12 @@ assert.equal(dj.sources[0].status, 403);
 assert.equal(dj.sources[1].headlines, 3);
 assert.deepEqual(hits.slice(0, 2), ['news.google.com', 'feeds.npr.org']);
 console.log('✅ fallback source tests passed');
+
+import { editionKey } from '../src/index.js';
+assert.equal(editionKey(new Date('2026-10-03T15:00:00Z')), '2026-10-03-am'); // 10am CDT
+assert.equal(editionKey(new Date('2026-10-03T19:00:00Z')), '2026-10-03-pm'); // 2pm CDT
+assert.equal(editionKey(new Date('2026-10-04T08:00:00Z')), '2026-10-03-pm'); // 3am CDT, still last night
+const pv = await (await worker.fetch(new Request('https://x/api/poll?id=hotdog', { method: 'POST', body: JSON.stringify({ choice: 'a' }) }), env, ctx)).json();
+assert.deepEqual(pv.votes, { a: 1, b: 0 });
+assert.equal((await worker.fetch(new Request('https://x/api/poll?id=../x'), env, ctx)).status, 400);
+console.log('✅ edition + poll tests passed');

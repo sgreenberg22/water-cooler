@@ -58,11 +58,12 @@ export default {
       if (path === '/api/pack' && request.method === 'GET') return await handlePack(url, env, ctx);
       if (path === '/api/rate' && request.method === 'POST') return await handleRate(request, env);
       if (path === '/api/stats' && request.method === 'GET') return await handleStats(env);
+      if (path === '/api/poll') return await handlePoll(request, url, env);
       if (path === '/api/debug') {
         const key = normalizeKey(url.searchParams.get('key') || 'cat:top');
         if (!key) return json({ error: 'Bad pack key' }, 400);
         const report = [];
-        const items = await getHeadlines(key, dayKey(), env, report);
+        const items = await getHeadlines(key, editionKey(), env, report);
         let ai = 'not tried';
         if (url.searchParams.get('ai') === '1' && items.length) {
           try { const r = await callWorkersAI(env, buildUserPrompt(packSpec(key), items)); ai = cleanPoints(r, items).length + ' points'; }
@@ -74,6 +75,7 @@ export default {
         return json({
           ok: true,
           day: dayKey(),
+          edition: editionKey(),
           ai: Boolean(env.AI),
           kv: Boolean(env.TALK_KV),
           provider: providerOrder(env),
@@ -94,7 +96,7 @@ export default {
   // Cron (see wrangler.jsonc): ~6am Central. Pre-fetches headlines and warms the
   // packs almost everyone gets, so the first person in each morning isn't kept waiting.
   async scheduled(event, env, ctx) {
-    const day = dayKey();
+    const day = editionKey();
     const warm = (env.PREWARM || 'cat:top,cat:sports')
       .split(',').map((s) => normalizeKey(s)).filter(Boolean);
     const all = Object.keys(CATEGORIES).map((k) => `cat:${k}`);
@@ -110,9 +112,9 @@ export default {
 async function handlePack(url, env, ctx) {
   const key = normalizeKey(url.searchParams.get('key') || '');
   if (!key) return json({ error: 'Bad pack key' }, 400);
-  const day = dayKey();
+  const day = editionKey();
   const pack = await getPack(key, day, env, ctx);
-  return json({ day, key, ...pack }, 200, { 'cache-control': 'private, max-age=300' });
+  return json({ day: dayKey(), edition: day, key, ...pack }, 200, { 'cache-control': 'private, max-age=300' });
 }
 
 async function handleRate(request, env) {
@@ -139,6 +141,21 @@ async function handleStats(env) {
   if (!env.TALK_KV) return json({ day: dayKey(), total: 0 });
   const s = (await env.TALK_KV.get(`stats:${dayKey()}`, 'json')) || { nailed: 0, survived: 0, flopped: 0 };
   return json({ day: dayKey(), ...summarize(s) }, 200, { 'cache-control': 'public, max-age=60' });
+}
+
+async function handlePoll(request, url, env) {
+  const id = String(url.searchParams.get('id') || '').toLowerCase();
+  if (!/^[a-z0-9-]{1,40}$/.test(id)) return json({ error: 'Bad poll id' }, 400);
+  const k = `poll:${dayKey()}:${id}`;
+  const votes = (env.TALK_KV && (await env.TALK_KV.get(k, 'json'))) || { a: 0, b: 0 };
+  if (request.method === 'POST') {
+    let body = {};
+    try { body = await request.json(); } catch {}
+    if (body.choice !== 'a' && body.choice !== 'b') return json({ error: 'choice must be a or b' }, 400);
+    votes[body.choice] += 1;
+    if (env.TALK_KV) { try { await env.TALK_KV.put(k, JSON.stringify(votes), { expirationTtl: 60 * 60 * 24 * 3 }); } catch {} }
+  }
+  return json({ id, votes }, 200, { 'cache-control': 'no-store' });
 }
 
 function summarize(s) {
@@ -299,7 +316,17 @@ Rules:
 - Politics: only neutral, non-partisan observations people of any party could nod along to. No cheerleading, no insults.
 - Never invent facts, scores, numbers or quotes that aren't in the headline. If you add context, keep it general and hedge it.
 - Lines are spoken by the user in first person, in plain casual English. No hashtags. No emoji inside the lines.
-- Return JSON only, matching the requested shape.`;
+- Return JSON only, matching the requested shape.
+How to be funny:
+- Be specific. Every joke should hinge on a concrete detail from that story, not a line that fits any headline.
+- Short, with the punchline at the very end. Conversational, like something a person would actually say at the coffee machine.
+- The four humor styles must sound clearly different from each other.
+- Banned filler: "Riveting", "Truly", "Wild", "What a week", "What a time to be alive", "Interesting times", "I can't even", "That's a lot". Never start with "So," or "Well,".
+Example for "City adds 300 parking meters downtown":
+  dry: "Great. Three hundred new ways to get a ticket."
+  dad: "I'd park myself on this topic, but it costs four bucks an hour."
+  cynical: "Can't wait to pay four dollars to stare at a meter that's broken."
+  observational: "Somehow the meter always works perfectly when you're thirty seconds late."`;
 
 const POINT_SCHEMA = {
   type: 'object',
@@ -531,6 +558,12 @@ export function templatePack(spec, headlines) {
 }
 
 /* ---------------------------------------------------------------- helpers */
+
+// "2026-10-03-am" / "2026-10-03-pm": a fresh batch of news + jokes after 1pm Central.
+export function editionKey(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: '2-digit', hour12: false }).format(now)) % 24;
+  return `${dayKey(now)}-${hour >= 13 || hour < ROLLOVER_HOUR ? 'pm' : 'am'}`;
+}
 
 export function dayKey(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {

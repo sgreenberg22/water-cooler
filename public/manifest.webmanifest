@@ -1,0 +1,13 @@
+{
+  "name": "Water Cooler",
+  "short_name": "Water Cooler",
+  "description": "Your daily small-talk survival kit.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#15121f",
+  "theme_color": "#15121f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

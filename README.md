@@ -55,7 +55,7 @@ Worker → **Settings** → **Domains & Routes** → **Add** → Custom domain (
 
 - **News:** Google News RSS feeds. No key, no limit worth worrying about.
 - **AI:** Cloudflare Workers AI. 10,000 free "neurons" a day, reset at midnight UTC (7pm Central).
-  The default model (Llama 3.3 70B) uses roughly 225 neurons per pack, so about **40+ packs a day free**.
+  The default model (Llama 3.3 70B) uses roughly 290 neurons per pack, so about **30+ packs a day free**. Each topic is written twice a day (AM and PM editions).
 - **Packs are shared.** A pack is one topic for one day (Tech, Big News, Chicago Bears…).
   It's generated once and every user who picks that topic gets the same cached copy. Cost grows
   with the number of *topics*, not the number of *people*.
@@ -91,6 +91,11 @@ Rough cost: ~$0.006 per pack, so 25 packs/day ≈ $4/month.
 - Weather banter sticky note (Open-Meteo, no key).
 - 🚨 **Eject**: an instant line for when you're caught off guard.
 - Streaks, XP, ranks (Hallway Ghost → Small Talk Sommelier), personal and global hit rate.
+- **AM edition + PM reload:** fresh headlines and jokes after 1pm Central. The app picks it up when you reopen it.
+- **Comebacks tab:** answers to "How was your weekend?", "Busy?" and friends, in your humor style.
+- **Office Bingo tab:** a new 3x3 card daily ("You're on mute", microwave fish…). Lines earn XP.
+- **Daily hot-take poll** with everyone's votes. Ask it out loud for an instant conversation.
+- **Get me out** exit lines inside Eject, Share buttons on cards, add-to-home-screen icon.
 - Six themes: Night Shift, Morning Commute, Break Room, Bubblegum, Arcade, Cubicle Beige.
 - Gulp, the water cooler mascot. Tap him.
 

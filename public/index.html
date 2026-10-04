@@ -6,6 +6,10 @@
 <title>Water Cooler</title>
 <meta name="description" content="Your daily small-talk survival kit. Talking points from today's headlines, in your sense of humor.">
 <meta name="theme-color" content="#15121f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Water Cooler">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,6 +163,48 @@ input { font: inherit; color: inherit; }
 .hchip[aria-pressed="true"] { background: var(--a3); color: var(--tag-ink); border-color: transparent; transform: rotate(-2deg); }
 .shuffle { flex: none; height: 38px; padding: 0 12px; border-radius: 999px; background: var(--surface); border: 1.5px dashed var(--muted); font-weight: 800; font-size: .86rem; }
 .shuffle:active { transform: rotate(-6deg) scale(.95); }
+
+/* ---------- tabs ---------- */
+.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.tabs button { padding: 10px 4px; border-radius: 14px; font-weight: 800; font-size: .88rem; background: var(--surface); border: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; transition: transform .15s, background-color .2s; }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: transparent; transform: translateY(-2px); }
+.tab-badge:empty { display: none; }
+.tab-badge { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 99px; background: var(--a1); color: var(--tag-ink); font-size: .72rem; line-height: 18px; margin-left: 2px; }
+.app[data-tab="bingo"] .controls { display: none; }
+.app[data-tab="comebacks"] #modeSeg, .app[data-tab="comebacks"] #shuffleBtn { display: none; }
+.panel-head { margin: 16px 0 4px; }
+.panel-head h2 { font-family: var(--display); font-weight: 400; font-size: 1.5rem; line-height: 1.1; margin: 0 0 4px; text-wrap: balance; }
+.panel-head p { margin: 0; color: var(--muted); font-size: .92rem; }
+
+/* ---------- poll ---------- */
+.poll { background: var(--surface); border: 2px dashed var(--a5); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; animation: card-in .6s .1s cubic-bezier(.2,1.3,.4,1) both; }
+.poll .mono { color: var(--muted); display: flex; justify-content: space-between; }
+.poll-q { font-family: var(--display); font-size: 1.35rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+.poll-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.poll-opt { position: relative; overflow: hidden; padding: 12px 10px; border-radius: 14px; background: var(--surface-2); font-weight: 800; text-align: left; min-height: 50px; }
+.poll-opt .fill { position: absolute; inset: 0 auto 0 0; background: color-mix(in oklab, var(--a5) 45%, transparent); transition: width .9s cubic-bezier(.2,1,.3,1); }
+.poll-opt.mine .fill { background: color-mix(in oklab, var(--a1) 55%, transparent); }
+.poll-opt span { position: relative; display: flex; justify-content: space-between; gap: 6px; }
+.poll-opt b { font-variant-numeric: tabular-nums; }
+.poll .small { margin: 0; }
+.poll-opt:disabled { color: inherit; cursor: default; opacity: 1; }
+
+/* ---------- comebacks ---------- */
+.cb { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 8px; box-shadow: var(--shadow); }
+.cb-q { margin: 0; font-weight: 800; color: var(--muted); display: flex; gap: 8px; font-size: .95rem; }
+.cb-a { margin: 0; font-weight: 800; font-size: 1.12rem; line-height: 1.32; background: color-mix(in oklab, var(--cat) 17%, var(--surface)); border-radius: 14px; padding: 10px 12px; }
+.cb-safe { margin: 0; font-size: .88rem; color: var(--muted); }
+.cb-safe b { font-family: var(--mono); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; margin-right: 4px; }
+
+/* ---------- bingo ---------- */
+.bingo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.sq { aspect-ratio: 1; max-width: 100%; border-radius: 16px; padding: 8px; background: var(--surface); border: 1.5px solid var(--line); font-weight: 600; font-size: .8rem; line-height: 1.2; display: grid; place-items: center; text-align: center; position: relative; overflow: hidden; transition: transform .15s, background-color .25s; }
+.sq:active { transform: scale(.94); }
+.sq.on { background: var(--a2); color: var(--tag-ink); border-color: transparent; }
+.sq.on::after { content: "✓"; position: absolute; top: 4px; right: 8px; font-weight: 800; }
+.sq.free { background: var(--a3); color: var(--tag-ink); border-color: transparent; }
+.sq.win { animation: boop .5s cubic-bezier(.2,1.8,.4,1); box-shadow: 0 0 0 3px var(--a1); }
+.bingo-foot { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-top: 12px; color: var(--muted); font-size: .88rem; }
 
 /* ---------- notices ---------- */
 .notice { display: flex; gap: 10px; align-items: center; margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: var(--surface-2); border: 1px dashed var(--muted); font-size: .9rem; }
@@ -399,6 +445,12 @@ details.deeper[open] summary::before { transform: rotate(45deg); }
     </div>
   </section>
 
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button data-tab="brief" aria-pressed="true">📰 Briefing</button>
+    <button data-tab="comebacks" aria-pressed="false">💬 Comebacks</button>
+    <button data-tab="bingo" aria-pressed="false">🎯 Bingo <span class="tab-badge" id="bingoBadge"></span></button>
+  </nav>
+
   <section class="controls" aria-label="Briefing settings">
     <div class="seg" id="modeSeg" data-v="nod">
       <span class="knob"></span>
@@ -411,11 +463,16 @@ details.deeper[open] summary::before { transform: rotate(45deg); }
     </div>
   </section>
 
-  <div id="notices"></div>
-  <div class="stack" id="stack">
-    <div id="weather"></div>
-    <div class="stack" id="cards" style="margin-top:0"></div>
+  <div id="panel-brief">
+    <div id="notices"></div>
+    <div class="stack" id="stack">
+      <div id="weather"></div>
+      <div id="poll"></div>
+      <div class="stack" id="cards" style="margin-top:0"></div>
+    </div>
   </div>
+  <div id="panel-comebacks" hidden></div>
+  <div id="panel-bingo" hidden></div>
 
   <footer class="foot">
     <span id="footLine">Fresh batch every morning around 6am Central.</span>
@@ -540,6 +597,101 @@ for (const list of Object.values(DEMO)) for (const pt of list) {
   const [what, nods] = DEMO_EXTRA[pt.id] || ['', []];
   pt.what = what; pt.nods = Object.fromEntries(HUMOR_KEYS.map((k, i) => [k, nods[i] || pt.nod]));
 }
+const EXITS = [
+  'Well, I should let you get back to it.',
+  "I'm gonna go refill this before my next meeting. Good catching up!",
+  'Oh, I have a call in two minutes. Great talking!',
+  'I have a spreadsheet that needs staring at. Wish me luck.',
+  "I'd love to keep chatting, but my inbox is calling. Loudly.",
+  "I'm going to grab a coffee before it's all gone. Talk soon!",
+  'Okay, back to the salt mines!',
+  "Let me go pretend I know what I'm doing. Good talk!",
+  "I'll let you go. I know you're slammed today.",
+  'Alright, I need to go be productive for at least ten minutes.',
+];
+// "When they say..." cheat sheet. Each: prompt, safe answer, then dry / dad / cynical / observational.
+const COMEBACKS = [
+  ['👋', 'How was your weekend?', 'Good! Pretty low-key. How about yours?',
+    'It happened. Then it ended. Classic weekend.', 'Too short. I need a weekend from my weekend.',
+    "Gone in about four hours, somehow. You?", "Spent most of it deciding what to do with it. How was yours?"],
+  ['😰', 'Busy today?', 'Steady, but manageable. You?',
+    'Busy enough to look busy. Which is the goal.', "I'm so busy I'm running out of places to be.",
+    'Busy is my natural state now. Send help. Or snacks.', "I've got three tabs open for every task, so... yes?"],
+  ['🙃', 'Living the dream?', 'Can\'t complain! Well, I could, but I won\'t.',
+    'Living it. Dreaming of something else.', "Living the dream. Mostly the one where I forgot my pants.",
+    "If this is the dream, I'd like to speak to the manager.", "Every day's a dream. Some are the falling kind."],
+  ['🌴', 'Any plans this weekend?', 'Nothing big, just catching up on stuff. You?',
+    'Ambitious plans to do nothing, then do less.', "I'm planning to not plan. It's a whole plan.",
+    "Errands. So many errands. The adult dream.", 'The plan is always big on Friday and tiny by Saturday noon.'],
+  ['🌦️', 'Can you believe this weather?', 'I know, right? Hard to dress for it.',
+    'I can. That\'s the sad part.', "It's like the weather can't make up its mind. Very relatable.",
+    'Four seasons in one day. Efficient, at least.', 'I saw someone in shorts and someone in a parka on the same block.'],
+  ['🏈', 'Did you see the game?', "Caught the highlights! What'd you think?",
+    'I saw the score. Does that count?', "I saw parts of it. The commercials were strong.",
+    'Watched just enough to be disappointed. You?', "Saw enough to know everyone's going to talk about one play all week."],
+  ['☕', 'How\'s it going?', 'Pretty good! You?',
+    "It's going. Direction unclear.", "Going, going... not gone yet.",
+    'Still here, still caffeinated.', "Like a Monday that's been cosplaying as a Tuesday."],
+  ['🎉', 'Happy Friday!', 'Finally! Any fun plans?',
+    'The two best words in English. Happy Friday.', 'Happy Fri-yay. Sorry, I had to.',
+    "Friday's great until you remember Monday exists.", 'Everyone walks 20% faster on Fridays. Have you noticed?'],
+  ['😵', 'Case of the Mondays?', 'A little! Easing into it.',
+    'Monday and I are not on speaking terms.', "Mondays are just weekends that went bad.",
+    "It's Monday. My coffee has a coffee.", 'The office is so quiet on Mondays. Everyone is just... buffering.'],
+  ['🖥️', 'What are you working on?', "A couple of things wrapping up. What's keeping you busy?",
+    "Mostly emails about other emails.", "Oh, you know. Working on working.",
+    'Same thing as last week, but with more meetings about it.', "Honestly? I'd need a whiteboard and twenty minutes."],
+  ['🚗', 'How was the commute?', 'Not bad today! Yours?',
+    'Long enough to finish a podcast and start questioning life.', "It was a real drive-ve experience.",
+    'Same traffic, different day.', "Everyone forgets how to drive the second it rains."],
+  ['🏖️', 'Long time no see!', 'I know! How have you been?',
+    'I\'ve been hiding. It worked until now.', "I know. I've been working remotely. From reality.",
+    'Busy hiding behind meetings. You?', "Feels like we only cross paths at this exact coffee machine."],
+];
+// Daily office bingo squares.
+const BINGO = [
+  'Someone says "circle back"', '"Can you see my screen?"', 'Weather mentioned before 9am', '"Happy Friday!" on a Thursday',
+  'Someone is "living the dream"', 'Microwave fish incident', '"You\'re on mute"', 'A meeting that could\'ve been an email',
+  'Someone is "swamped"', '"Per my last email"', 'Birthday treats in the break room', 'Elevator silence for 3+ floors',
+  'Someone says "synergy"', '"Let\'s take this offline"', 'The coffee pot is empty', 'A "quick question" that isn\'t quick',
+  'Someone complains about their commute', 'Reply-all chaos', '"Is it Friday yet?"', 'Loud desk lunch',
+  '"Low-hanging fruit"', 'Thermostat debate', '"Hope this finds you well"', 'Pet appears on camera',
+  '"Bandwidth" (not about internet)', 'Printer jam', '"Touch base"', '"Just one more thing…"',
+  '"Long time no see!"', 'Someone\'s camera freezes mid-sentence',
+];
+// Daily hot-take poll. [id, question, option A, option B]
+const POLLS = [
+  ['hotdog', 'Is a hot dog a sandwich?', 'Yes, legally', 'Absolutely not'],
+  ['pineapple', 'Pineapple on pizza?', 'Delicious', 'A crime'],
+  ['thermostat', 'Is the office usually too hot or too cold?', 'Too hot', 'Too cold'],
+  ['replyall', 'Is reply-all ever okay?', 'Sometimes', 'Never'],
+  ['stairs', 'Two floors up: stairs or elevator?', 'Stairs', 'Elevator'],
+  ['cameras', 'Cameras on or off in video meetings?', 'On', 'Off, please'],
+  ['pizza', 'Deep dish or thin crust?', 'Deep dish', 'Thin crust'],
+  ['cereal', 'Is cereal a soup?', 'Technically yes', 'No. Stop.'],
+  ['fish', 'Fish in the office microwave?', 'Allowed', 'Banned forever'],
+  ['owl', 'Early bird or night owl?', 'Early bird', 'Night owl'],
+  ['coffee', 'Coffee or tea?', 'Coffee', 'Tea'],
+  ['clap', 'Clapping when the plane lands?', 'Yes, joyfully', 'Please no'],
+  ['tp', 'Toilet paper: over or under?', 'Over', 'Under'],
+  ['water', 'Is water wet?', 'Yes', 'No'],
+  ['gif', 'How do you say GIF?', 'Hard G', 'Jif'],
+  ['textcall', 'Text or call?', 'Text', 'Call'],
+  ['dogscats', 'Dogs or cats?', 'Dogs', 'Cats'],
+  ['seat', 'Window or aisle?', 'Window', 'Aisle'],
+  ['ketchup', 'Ketchup on a hot dog?', 'Sure', 'Never (Chicago rules)'],
+  ['pspice', 'Pumpkin spice season: love it or over it?', 'Love it', 'Make it stop'],
+  ['sandals', 'Socks with sandals?', 'Comfort wins', 'Fashion crime'],
+  ['beach', 'Beach or mountains?', 'Beach', 'Mountains'],
+  ['openoffice', 'Open office plans: love them or hate them?', 'Love them', 'Need walls'],
+  ['bfd', 'Breakfast for dinner?', 'Elite', 'Weird'],
+  ['candy', 'Best Halloween candy: chocolate or sour?', 'Chocolate', 'Sour stuff'],
+  ['snooze', 'Is the snooze button essential or evil?', 'Essential', 'Never touch it'],
+  ['inbox', 'Inbox zero, or 4,000 unread?', 'Zero', '4,000 unread'],
+  ['music', 'Music while working?', 'Always', 'Silence please'],
+  ['meeting', 'Ideal meeting: 15 minutes or no meeting?', '15 minutes', 'No meeting'],
+  ['leftovers', 'Leftover pizza: cold or reheated?', 'Cold', 'Reheated'],
+];
 const DEMO_FOR = { top: 'top', politics: 'top', business: 'top', sports: 'sports', tech: 'tech', science: 'tech', gaming: 'tech', weird: 'weird', food: 'weird', entertainment: 'weird' };
 const DEMO_WEATHER = { temp: 54, code: 3, wind: 13 };
 const DEFAULT_PROFILE = { name: '', city: 'Chicago', teams: ['Chicago Bears'], noSports: false, interests: ['tech', 'weird'], humor: 'dry', hobbies: [], time: 'coffee' };
@@ -574,6 +726,12 @@ function centralDay(now = new Date()) {
   if (Number(p.hour) % 24 < 5) d = new Date(d - 864e5);
   return d.toISOString().slice(0, 10);
 }
+// Morning edition until 1pm Central, then an afternoon reload (matches the server).
+function editionKey(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: '2-digit', hour12: false }).format(now)) % 24;
+  return `${centralDay(now)}-${hour >= 13 || hour < 5 ? 'pm' : 'am'}`;
+}
+function seeded(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
 function localDay(offset = 0) {
   const d = new Date(Date.now() - 5 * 3600e3);
   d.setDate(d.getDate() + offset);
@@ -697,7 +855,7 @@ function computeStats() {
   let d = days.has(today) ? today : prevDay(today), streak = 0;
   while (days.has(d)) { streak++; d = prevDay(d); }
   const counts = { nailed: 0, survived: 0, flopped: 0 };
-  let xp = days.size * 10;
+  let xp = days.size * 10 + Object.values(store.get('bingoXp', {})).reduce((a, b) => a + b, 0);
   for (const r of Object.values(ratings)) { counts[r.v] = (counts[r.v] || 0) + 1; xp += XP[r.v] || 0; }
   const total = counts.nailed + counts.survived + counts.flopped;
   let ri = 0; RANKS.forEach(([min], i) => { if (xp >= min) ri = i; });
@@ -722,8 +880,14 @@ function renderHeader() {
   const today = localDay();
   if (!visits.includes(today)) { visits.push(today); store.set('visits', visits.slice(-400)); }
   const day = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).replace(',', ' ·');
-  $('#dateLine').textContent = `${day} · Briefing №${visits.length}`;
-  const tag = hr < 5 ? 'Go to bed.' : hr < 12 ? "Here's your ammo." : hr < 17 ? 'Reload for round two.' : "You made it. Mostly.";
+  const pm = editionKey().endsWith('pm');
+  $('#dateLine').textContent = `${day} · ${pm ? 'PM reload' : 'AM edition'} · №${visits.length}`;
+  const wd = new Date().getDay();
+  const tag = hr < 5 ? 'Go to bed.'
+    : hr < 12 ? (wd === 1 ? 'Monday. We meet again.' : wd === 5 ? "It's Friday. Coast mode." : "Here's your ammo.")
+    : hr < 14 ? 'Lunch table ready.'
+    : hr < 17 ? (wd === 5 ? 'Almost the weekend. Hold on.' : 'Fresh ammo for the 3pm slump.')
+    : 'You made it. Mostly.';
   $('#greet').innerHTML = `${part}${name}.<br><em>${tag}</em>`;
   const t = TIMES[p.time] || TIMES.coffee;
   $('#subLine').textContent = `${t.count} talking points, ${t.short} length. ${S.demo ? 'Sample batch.' : "Built from today's headlines."}`;
@@ -735,7 +899,7 @@ function renderControls() {
   seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
   const row = $('#humorRow'); row.replaceChildren();
   for (const [k, v] of Object.entries(HUMORS)) {
-    row.append(h('button', { class: 'hchip', 'aria-pressed': String(S.humor === k), onclick: () => { S.humor = k; renderControls(); refreshLines(); } }, `${v.emoji} ${v.label}`));
+    row.append(h('button', { class: 'hchip', 'aria-pressed': String(S.humor === k), onclick: () => { S.humor = k; renderControls(); refreshLines(); if (S.tab === 'comebacks') renderComebacks(); } }, `${v.emoji} ${v.label}`));
   }
 }
 $('#modeSeg').addEventListener('click', (e) => {
@@ -837,7 +1001,8 @@ function demoPack(key) {
 }
 async function loadPacks() {
   S.plan = buildPlan();
-  const day = centralDay();
+  const day = editionKey();
+  S.edition = day;
   const cache = store.get('packs', null);
   const cached = cache && cache.day === day ? cache.data : {};
   S.packs = {};
@@ -856,10 +1021,11 @@ async function loadPacks() {
       const j = await r.json();
       S.packs[key] = { status: 'ok', label: j.label, emoji: j.emoji, source: j.source, points: j.points || [], role };
       const c = store.get('packs', null);
-      const data = c && c.day === (j.day || day) ? c.data : {};
+      const ed = j.edition || day;
+      const data = c && c.day === ed ? c.data : {};
       if (j.points && j.points.length) {
         data[key] = { label: j.label, emoji: j.emoji, source: j.source, points: j.points };
-        store.set('packs', { day: j.day || day, data });
+        store.set('packs', { day: ed, data });
       }
     } catch {
       S.packs[key] = { ...S.packs[key], status: 'error', points: [] };
@@ -952,11 +1118,20 @@ function renderActions(el, pt, key, rating) {
     try { await navigator.clipboard.writeText(text); toast('Copied. Go get \'em.'); }
     catch { const s = getSelection(), r = document.createRange(); r.selectNodeContents($('.say-line', el)); s.removeAllRanges(); s.addRange(r); toast('Selected. Long-press to copy.'); }
   } });
+  const shareBtn = h('button', { class: 'act', text: '📤 Share', onclick: () => shareText(`"${lineFor(pt)}"\n\n${pt.headline}${pt.link && /^https?:/.test(pt.link) ? `\n${pt.link}` : ''}`) });
   if (rating) {
-    box.append(copyBtn, h('span', { class: 'rated-note', text: `${VERDICTS[rating.v].label.split(' ')[0]} logged` }), h('button', { class: 'act', text: 'Change', onclick: () => showRateOpts(el, pt, key, box, copyBtn) }));
+    box.append(copyBtn, shareBtn, h('span', { class: 'rated-note', text: `${VERDICTS[rating.v].label.split(' ')[0]} logged` }), h('button', { class: 'act', text: 'Change', onclick: () => showRateOpts(el, pt, key, box, copyBtn) }));
   } else {
-    box.append(h('button', { class: 'act primary', text: '✅ I used it', onclick: () => showRateOpts(el, pt, key, box, copyBtn) }), copyBtn);
+    box.append(h('button', { class: 'act primary', text: '✅ I used it', onclick: () => showRateOpts(el, pt, key, box, copyBtn) }), copyBtn, shareBtn);
   }
+}
+async function shareText(text) {
+  const full = S.demo ? text : `${text}\n\nvia Water Cooler ${location.origin}`;
+  if (navigator.share) { try { await navigator.share({ text: full }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(full); toast('Copied. Paste it in the group chat.'); } catch { toast("Couldn't share from here. Try Copy."); }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); toast("Copied. Go get 'em."); } catch { toast("Couldn't copy. Long-press the text instead."); }
 }
 function showRateOpts(el, pt, key, box, copyBtn) {
   box.replaceChildren(h('div', { class: 'rate-opts' }, ...Object.entries(VERDICTS).map(([v, d]) => h('button', { class: 'act', text: d.label, onclick: (e) => rate(el, pt, key, v, e) }))));
@@ -1028,10 +1203,12 @@ function openEject() {
   const followEl = h('p', { class: 'eject-follow', text: follow });
   const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); $('#ejectBtn').focus(); };
   const onKey = (e) => { if (e.key === 'Escape') close(); };
-  const again = () => { const [l, f] = ejectLine(); lineEl.textContent = l; followEl.textContent = f; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; };
+  const escape = () => { lineEl.textContent = pick(EXITS); followEl.textContent = 'Then walk away with purpose. Holding a mug helps.'; $('.mono', card).textContent = '🚪 Exit strategy 🚪'; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; mood('happy', 1500); };
+  const again = () => { $('.mono', card).textContent = '🚨 Emergency small talk 🚨'; const [l, f] = ejectLine(); lineEl.textContent = l; followEl.textContent = f; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; };
   const card = h('div', { class: 'eject-card' },
     h('span', { class: 'mono', text: '🚨 Emergency small talk 🚨' }), lineEl, followEl,
-    h('div', { class: 'eject-btns' }, h('button', { class: 'bigbtn', onclick: again, text: '🔁 Another' }), h('button', { class: 'bigbtn go', onclick: close, text: "😮‍💨 I'm safe" })));
+    h('div', { class: 'eject-btns' }, h('button', { class: 'bigbtn', onclick: again, text: '🔁 Another' }), h('button', { class: 'bigbtn', onclick: escape, text: '🚪 Get me out' })),
+    h('button', { class: 'bigbtn go', onclick: close, text: "😮‍💨 I'm safe" }));
   const ov = h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Emergency talking point', onclick: (e) => { if (e.target === ov) close(); } }, card);
   document.body.append(ov); document.addEventListener('keydown', onKey);
   $('.bigbtn.go', ov).focus();
@@ -1144,6 +1321,101 @@ function openSetup(start) {
   });
 }
 
+/* ================================================================ tabs */
+function setTab(tab) {
+  S.tab = tab; store.set('tab', tab);
+  $('#app').dataset.tab = tab;
+  $('#tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === tab)));
+  $('#panel-brief').hidden = tab !== 'brief';
+  $('#panel-comebacks').hidden = tab !== 'comebacks';
+  $('#panel-bingo').hidden = tab !== 'bingo';
+  if (tab === 'comebacks') renderComebacks();
+  if (tab === 'bingo') renderBingo();
+}
+$('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-tab]'); if (b) setTab(b.dataset.tab); });
+
+/* ================================================================ poll */
+function todaysPoll() { const d = centralDay(); const r = seeded('poll' + d); return POLLS[Math.floor(r() * POLLS.length)]; }
+async function renderPoll() {
+  const [id, q, a, b] = todaysPoll();
+  const mine = store.get('poll', {})[centralDay()];
+  let votes = null;
+  if (mine) {
+    if (S.demo) votes = { a: 0, b: 0, [mine]: 1 };
+    else try { votes = (await (await fetch(`/api/poll?id=${id}`)).json()).votes; } catch {}
+    if (votes && !(votes.a + votes.b)) votes[mine] = 1;
+  }
+  const total = votes ? votes.a + votes.b : 0;
+  const opt = (k, label) => {
+    const pct = votes && total ? Math.round((votes[k] / total) * 100) : 0;
+    return h('button', { class: `poll-opt${mine === k ? ' mine' : ''}`, disabled: !!mine, 'aria-pressed': String(mine === k), onclick: (e) => vote(k, e) },
+      h('i', { class: 'fill', style: `width:${votes ? pct : 0}%` }),
+      h('span', null, label, votes ? h('b', { text: `${pct}%` }) : null));
+  };
+  $('#poll').replaceChildren(h('div', { class: 'poll' },
+    h('div', { class: 'mono' }, h('span', { text: "🔥 Today's hot take" }), h('span', { text: mine ? `${total} vote${total === 1 ? '' : 's'}` : 'Tap to vote' })),
+    h('p', { class: 'poll-q', text: q }),
+    h('div', { class: 'poll-opts' }, opt('a', a), opt('b', b)),
+    h('p', { class: 'small', text: mine ? `Now ask someone: "${q}" Instant conversation, zero news required.` : 'Vote, see where everyone lands, then ask a coworker. Works every time.' })));
+  async function vote(k, e) {
+    const all = store.get('poll', {}); all[centralDay()] = k; store.set('poll', all);
+    const r = e.currentTarget.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top, 30);
+    if (!S.demo) try { await fetch(`/api/poll?id=${id}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ choice: k }) }); } catch {}
+    renderPoll();
+  }
+}
+
+/* =========================================================== comebacks */
+function renderComebacks() {
+  const box = $('#panel-comebacks');
+  const hi = { dry: 3, dad: 4, cynical: 5, observational: 6 }[S.humor] || 3;
+  box.replaceChildren(
+    h('div', { class: 'panel-head' }, h('h2', { text: 'When they say…' }), h('p', { text: `The questions you get every single day, answered in ${HUMORS[S.humor].label.toLowerCase()} mode. Tap a line to copy it.` })),
+    h('div', { class: 'stack' }, ...COMEBACKS.map((c, i) => h('div', { class: 'cb', style: `--cat:var(${CAT_VARS[i % CAT_VARS.length]})` },
+      h('p', { class: 'cb-q' }, h('span', { text: c[0] }), h('span', { text: `"${c[1]}"` })),
+      h('button', { class: 'cb-a', style: 'text-align:left', onclick: () => copyText(c[hi]), text: c[hi] }),
+      h('p', { class: 'cb-safe' }, h('b', { text: 'Safe version' }), c[2])))));
+}
+
+/* =============================================================== bingo */
+function bingoCard() {
+  const d = centralDay(), r = seeded('bingo' + d);
+  const pool = BINGO.slice(); const picks = [];
+  while (picks.length < 8) picks.push(pool.splice(Math.floor(r() * pool.length), 1)[0]);
+  picks.splice(4, 0, '☕ FREE: you showed up');
+  return picks;
+}
+const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function bingoState() { const all = store.get('bingo', {}); return all[centralDay()] || [4]; }
+function renderBingoBadge() { const n = bingoState().length - 1; $('#bingoBadge').textContent = n ? String(n) : ''; }
+function renderBingo() {
+  const sqs = bingoCard(), marked = new Set(bingoState());
+  const done = LINES.filter((l) => l.every((i) => marked.has(i)));
+  const box = $('#panel-bingo');
+  box.replaceChildren(
+    h('div', { class: 'panel-head' }, h('h2', { text: 'Office Bingo' }), h('p', { text: 'New card every day. Tap a square when it happens. Lines are worth 15 XP, a full card 50.' })),
+    h('div', { class: 'bingo' }, ...sqs.map((t, i) => h('button', { class: `sq${i === 4 ? ' free' : marked.has(i) ? ' on' : ''}${done.some((l) => l.includes(i)) ? ' win' : ''}`, 'aria-pressed': String(marked.has(i)), onclick: (e) => toggleSquare(i, e), text: t }))),
+    h('div', { class: 'bingo-foot' }, h('span', { text: done.length ? `${done.length} line${done.length === 1 ? '' : 's'}! ${marked.size === 9 ? 'BLACKOUT. You are the office.' : 'Keep listening.'}` : `${marked.size - 1} of 8 spotted` }),
+      h('button', { class: 'act', text: '📤 Brag', onclick: () => shareText(`I got ${done.length} line${done.length === 1 ? '' : 's'} on today's Office Bingo. ${marked.size === 9 ? 'Full blackout. ' : ''}The office is predictable.`) })));
+}
+function toggleSquare(i, e) {
+  if (i === 4) { say('That one is free. Showing up counts.', 2200); return; }
+  const all = store.get('bingo', {}), d = centralDay();
+  const m = new Set(all[d] || [4]);
+  const before = LINES.filter((l) => l.every((x) => m.has(x))).length;
+  m.has(i) ? m.delete(i) : m.add(i);
+  all[d] = [...m]; store.set('bingo', all);
+  const after = LINES.filter((l) => l.every((x) => m.has(x))).length;
+  const xp = store.get('bingoXp', {}); xp[d] = after * 15 + (m.size === 9 ? 50 : 0); store.set('bingoXp', xp);
+  const s0 = computeStats();
+  renderBadges(); renderBingo(); renderBingoBadge();
+  if (after > before) {
+    const r = e.currentTarget.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top, m.size === 9 ? 160 : 80);
+    jump(); mood('happy'); toast(m.size === 9 ? 'BLACKOUT! +50 XP' : 'BINGO! +15 XP');
+    if (navigator.vibrate) try { navigator.vibrate([30, 40, 30, 40, 60]); } catch {}
+  }
+}
+
 /* ============================================================== footer */
 function renderFoot() {
   const sources = new Set(Object.values(S.packs).map((p) => p.source).filter(Boolean));
@@ -1174,6 +1446,7 @@ async function boot() {
   // Live if the Worker answers; otherwise (local file, preview) run on sample data.
   S.demo = !(await detectBackend());
   renderHeader(); renderNotices(); renderFoot();
+  renderPoll(); renderBingoBadge(); setTab(store.get('tab', 'brief'));
   if (S.demo || profile) { loadPacks(); loadWeather(); }
   else renderCards(true);
   if (!S.demo) {
@@ -1182,6 +1455,16 @@ async function boot() {
   }
   setTimeout(() => say(firstVisit ? "Hi, I'm Gulp. I hear everything at this cooler. Tap me for advice." : pick(QUIPS), 4200), 700);
 }
+// Coming back later (lunch, 3pm)? Pick up the afternoon reload or a new day automatically.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !S.edition || S.demo || !profile) return;
+  if (editionKey() !== S.edition) {
+    const newDay = !editionKey().startsWith(S.edition.slice(0, 10));
+    renderHeader(); loadPacks(); renderPoll(); renderBingoBadge(); if (S.tab === 'bingo') renderBingo();
+    toast(newDay ? '☀️ New day, new ammo.' : '🔄 Afternoon reload: fresh ammo.');
+    say(newDay ? 'Fresh batch. Somebody did something newsworthy overnight.' : 'Afternoon reload is in. The 3pm slump is no match for you.', 3500);
+  }
+});
 boot();
 })();
 </script>
