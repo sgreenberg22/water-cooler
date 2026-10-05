@@ -66,7 +66,7 @@ export default {
         const items = await getHeadlines(key, editionKey(), env, report);
         let ai = 'not tried';
         if (url.searchParams.get('ai') === '1' && items.length) {
-          try { const r = await callWorkersAI(env, buildUserPrompt(packSpec(key), items)); ai = cleanPoints(r, items).length + ' points'; }
+          try { const edge = normalizeEdge(url.searchParams.get('edge')); const r = await callWorkersAI(env, buildUserPrompt(packSpec(key), items), systemPrompt(edge)); ai = cleanPoints(r, items, edge).length + ' points'; }
           catch (e) { ai = 'error: ' + (e && e.message || e); }
         }
         return json({ key, sources: report, sample: items.slice(0, 3).map((i) => i.title), ai });
@@ -102,7 +102,7 @@ export default {
     const all = Object.keys(CATEGORIES).map((k) => `cat:${k}`);
     const unique = [...new Set([...warm, ...all])];
     await Promise.allSettled(
-      unique.map((key) => (warm.includes(key) ? getPack(key, day, env) : getHeadlines(key, day, env)))
+      unique.map((key) => (warm.includes(key) ? getPack(key, day, env, ctx, DEFAULT_EDGE) : getHeadlines(key, day, env)))
     );
   },
 };
@@ -112,9 +112,10 @@ export default {
 async function handlePack(url, env, ctx) {
   const key = normalizeKey(url.searchParams.get('key') || '');
   if (!key) return json({ error: 'Bad pack key' }, 400);
+  const edge = normalizeEdge(url.searchParams.get('edge'));
   const day = editionKey();
-  const pack = await getPack(key, day, env, ctx);
-  return json({ day: dayKey(), edition: day, key, ...pack }, 200, { 'cache-control': 'private, max-age=300' });
+  const pack = await getPack(key, day, env, ctx, edge);
+  return json({ day: dayKey(), edition: day, key, edge, ...pack }, 200, { 'cache-control': 'private, max-age=300' });
 }
 
 async function handleRate(request, env) {
@@ -191,8 +192,8 @@ function packSpec(key) {
 
 const inflight = new Map();
 
-async function getPack(key, day, env, ctx) {
-  const kvKey = `pack:v2:${day}:${key}`;
+async function getPack(key, day, env, ctx, edge = DEFAULT_EDGE) {
+  const kvKey = `pack:v3:${day}:${edge}:${key}`;
   if (env.TALK_KV) {
     const cached = await env.TALK_KV.get(kvKey, 'json');
     if (cached) return { ...cached, cached: true };
@@ -203,7 +204,7 @@ async function getPack(key, day, env, ctx) {
     const spec = packSpec(key);
     const headlines = await getHeadlines(key, day, env);
     let pack = null;
-    if (headlines.length) pack = await generateWithAI(spec, headlines, env);
+    if (headlines.length) pack = await generateWithAI(spec, headlines, env, edge);
     if (!pack) pack = templatePack(spec, headlines);
     const out = {
       label: spec.label,
@@ -309,11 +310,38 @@ function decode(s) {
 
 /* --------------------------------------------------------------------- AI */
 
-const SYSTEM_PROMPT = `You write small-talk ammo for office workers who find small talk exhausting.
-Voice: a funny, self-aware friend. Warm, a little cynical, never mean. Everything must be safe to say out loud at work.
-Rules:
-- Skip any headline about deaths, crime, violence, tragedy, disasters, or anything graphic.
-- Politics: only neutral, non-partisan observations people of any party could nod along to. No cheerleading, no insults.
+export const EDGES = ['mild', 'spicy', 'unfiltered'];
+const DEFAULT_EDGE = 'spicy';
+export const normalizeEdge = (e) => (EDGES.includes(String(e)) ? String(e) : DEFAULT_EDGE);
+
+const VOICES = {
+  mild: `Voice: a funny, self-aware friend. Warm, a little cynical, never mean. Everything is safe to say to your boss.`,
+  spicy: `Voice: the funniest person in the office. Sarcastic, sharp, a little rude. Roast corporations, billionaires, institutions, meetings, sports teams, celebrities' public behavior, the city, and the user themselves. Gallows humor about work, money and adulthood is great. Commit to the bit; no hedging, no "just kidding". Still something you'd say to a coworker you like without getting a call from HR. No swearing.`,
+  unfiltered: `Voice: what you'd say to the coworker you get beers with after work. Savage, dark, deadpan. Roast public figures' public actions, companies, teams, institutions, office life and the user without mercy. Bleak humor about jobs, money, rent and getting older is welcome. Mild swearing is fine (damn, hell, crap, sucks, BS, pissed). No f-word or anything stronger.`,
+};
+const EXAMPLES = {
+  mild: `  dry: "Great. Three hundred new ways to get a ticket."
+  dad: "I'd park myself on this topic, but it costs four bucks an hour."
+  cynical: "Can't wait to pay four dollars to stare at a meter that's broken."
+  observational: "Somehow the meter always works perfectly when you're thirty seconds late."`,
+  spicy: `  dry: "Three hundred new meters. The city's most reliable employees, and none of them take lunch."
+  dad: "The city calls it a meter-ed approach. I call it highway robbery, minus the highway."
+  cynical: "They can't fill a pothole in five years, but 300 meters showed up by Tuesday."
+  observational: "Every meter in this city works perfectly until the exact moment it needs to take your card."`,
+  unfiltered: `  dry: "Three hundred meters. The city figured out mugging works better with a coin slot."
+  dad: "I'd complain, but they'd probably charge me by the minute for that too."
+  cynical: "The pothole on my street has been there since 2019, but sure, prioritize the damn meters."
+  observational: "Nothing unites this city like everyone sprinting out of a meeting at 11:58 to feed a meter."`,
+};
+
+function systemPrompt(edge = DEFAULT_EDGE) {
+  return `You write small-talk ammo for office workers who find small talk exhausting.
+${VOICES[edge] || VOICES[DEFAULT_EDGE]}
+Hard lines at every edge level (these never move):
+- Skip any headline about deaths, crime, violence, tragedy, disasters, illness or anything graphic. Never joke about victims.
+- Punch up, never down: no jokes about anyone's race, ethnicity, religion, nationality, gender, sexuality, disability, age, looks or weight. No slurs. No sexual content.
+- Only roast public figures, companies and institutions for what they publicly did. Never mock private people named in a story.
+- Politics: roast the process and politicians' behavior evenly. Never take a side on an issue, never insult voters or a party's supporters.
 - Never invent facts, scores, numbers or quotes that aren't in the headline. If you add context, keep it general and hedge it.
 - Lines are spoken by the user in first person, in plain casual English. No hashtags. No emoji inside the lines.
 - Return JSON only, matching the requested shape.
@@ -323,10 +351,19 @@ How to be funny:
 - The four humor styles must sound clearly different from each other.
 - Banned filler: "Riveting", "Truly", "Wild", "What a week", "What a time to be alive", "Interesting times", "I can't even", "That's a lot". Never start with "So," or "Well,".
 Example for "City adds 300 parking meters downtown":
-  dry: "Great. Three hundred new ways to get a ticket."
-  dad: "I'd park myself on this topic, but it costs four bucks an hour."
-  cynical: "Can't wait to pay four dollars to stare at a meter that's broken."
-  observational: "Somehow the meter always works perfectly when you're thirty seconds late."`;
+${EXAMPLES[edge] || EXAMPLES[DEFAULT_EDGE]}`;
+}
+
+// Backstop in case the model ignores the rules: strong profanity is never allowed,
+// mild swearing only at the unfiltered level.
+const STRONG = /(f+u+c+k|\bsh[i1]t(?!ake)|\w*shit\b|bitch|cunt|\bdick(s|head)?\b|\bcock\b|puss(y|ies)|bastard|asshole|motherf|whore|slut|retard)/i;
+const MILD_SWEAR = /\b(damn\w*|hell|crap\w*|piss\w*|bs|sucks?)\b/i;
+export function edgeOk(text, edge) {
+  if (!text) return true;
+  if (STRONG.test(text)) return false;
+  if (edge !== 'unfiltered' && MILD_SWEAR.test(text)) return false;
+  return true;
+}
 
 const POINT_SCHEMA = {
   type: 'object',
@@ -411,12 +448,13 @@ function providerOrder(env) {
   return order;
 }
 
-async function generateWithAI(spec, headlines, env) {
+async function generateWithAI(spec, headlines, env, edge = DEFAULT_EDGE) {
   const user = buildUserPrompt(spec, headlines);
+  const system = systemPrompt(edge);
   for (const provider of providerOrder(env)) {
     try {
-      const raw = provider === 'anthropic' ? await callAnthropic(env, user) : await callWorkersAI(env, user);
-      const points = cleanPoints(raw, headlines);
+      const raw = provider === 'anthropic' ? await callAnthropic(env, user, system) : await callWorkersAI(env, user, system);
+      const points = cleanPoints(raw, headlines, edge);
       if (points.length) return { points, source: provider };
     } catch (e) {
       console.error(`${provider} failed for ${spec.label}:`, e && e.message ? e.message : e);
@@ -425,10 +463,10 @@ async function generateWithAI(spec, headlines, env) {
   return null;
 }
 
-async function callWorkersAI(env, user) {
+async function callWorkersAI(env, user, system = systemPrompt()) {
   const model = env.AI_MODEL || DEFAULT_MODEL;
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: system },
     { role: 'user', content: user },
   ];
   let res;
@@ -447,7 +485,7 @@ async function callWorkersAI(env, user) {
   return res && (res.response ?? res.result?.response ?? res);
 }
 
-async function callAnthropic(env, user) {
+async function callAnthropic(env, user, system = systemPrompt()) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -458,7 +496,7 @@ async function callAnthropic(env, user) {
     body: JSON.stringify({
       model: env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
       max_tokens: 2200,
-      system: SYSTEM_PROMPT,
+      system,
       messages: [{ role: 'user', content: user }],
     }),
   });
@@ -467,7 +505,7 @@ async function callAnthropic(env, user) {
   return (data.content || []).map((c) => c.text || '').join('');
 }
 
-export function cleanPoints(raw, headlines) {
+export function cleanPoints(raw, headlines, edge = DEFAULT_EDGE) {
   let obj = raw;
   if (typeof raw === 'string') {
     const start = raw.indexOf('{');
@@ -512,8 +550,11 @@ export function cleanPoints(raw, headlines) {
     };
     if (!point.headline || !point.nod) continue;
     if (GRIM.test(point.headline)) continue;
-    const anyTake = point.takes.dry || point.takes.dad || point.takes.cynical || point.takes.observational || point.nod;
-    for (const k of Object.keys(point.takes)) if (!point.takes[k]) point.takes[k] = anyTake;
+    if (!edgeOk(point.nod, edge)) point.nod = '';
+    if (!point.nod) continue;
+    for (const k of Object.keys(point.takes)) if (!edgeOk(point.takes[k], edge)) point.takes[k] = '';
+    for (const k of Object.keys(point.nods)) if (!edgeOk(point.nods[k], edge)) point.nods[k] = '';
+    for (const k of Object.keys(point.takes)) if (!point.takes[k]) point.takes[k] = point.takes.dry || point.takes.observational || point.takes.cynical || point.takes.dad || point.nod;
     for (const k of Object.keys(point.nods)) if (!point.nods[k]) point.nods[k] = point.nod;
     if (used.has(point.headline)) continue;
     used.add(point.headline);

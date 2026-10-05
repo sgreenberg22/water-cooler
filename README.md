@@ -96,6 +96,7 @@ Rough cost: ~$0.006 per pack, so 25 packs/day ≈ $4/month.
 - **Office Bingo tab:** a new 3x3 card daily ("You're on mute", microwave fish…). Lines earn XP.
 - **Daily hot-take poll** with everyone's votes. Ask it out loud for an instant conversation.
 - **Get me out** exit lines inside Eject, Share buttons on cards, add-to-home-screen icon.
+- **Edge setting:** 🧁 Mild (boss-safe), 🌶️ Spicy (default: sarcastic, HR-proof), 🔥 Unfiltered (mild swearing, darker). Each level is cached separately, so only the levels people actually pick use AI allowance. Hard limits at every level: no tragedy, no punching down, no slurs or sexual content, politics roasted evenly.
 - Six themes: Night Shift, Morning Commute, Break Room, Bubblegum, Arcade, Cubicle Beige.
 - Gulp, the water cooler mascot. Tap him.
 

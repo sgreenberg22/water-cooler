@@ -112,3 +112,27 @@ const pv = await (await worker.fetch(new Request('https://x/api/poll?id=hotdog',
 assert.deepEqual(pv.votes, { a: 1, b: 0 });
 assert.equal((await worker.fetch(new Request('https://x/api/poll?id=../x'), env, ctx)).status, 400);
 console.log('✅ edition + poll tests passed');
+
+import { edgeOk, normalizeEdge } from '../src/index.js';
+assert.equal(normalizeEdge('unfiltered'), 'unfiltered');
+assert.equal(normalizeEdge('nuclear'), 'spicy');
+assert.equal(edgeOk('prioritize the damn meters', 'unfiltered'), true);
+assert.equal(edgeOk('prioritize the damn meters', 'spicy'), false);
+assert.equal(edgeOk('this is bullshit', 'unfiltered'), false);
+assert.equal(edgeOk('Shiitake mushrooms are back', 'mild'), true);
+assert.equal(edgeOk('Pass the cocktail menu', 'mild'), true);
+const swear = { points: [{ idx: 1, headline: 'Bears win a wild one', nod: 'Bears won, damn.', nods: {}, takes: { dry: 'What the fuck.', dad: 'Un-bear-lievable.', cynical: 'Enjoy it.', observational: 'Jerseys everywhere.' }, deep: 'x', ask: 'y', spice: 2 }] };
+assert.equal(cleanPoints(swear, items, 'spicy').length, 0, 'mild swear in nod drops point below unfiltered');
+const u = cleanPoints(swear, items, 'unfiltered');
+assert.equal(u[0].nod, 'Bears won, damn.');
+assert.notEqual(u[0].takes.dry, 'What the fuck.', 'strong profanity replaced');
+// edge-specific cache keys
+store.clear(); aiCalls = 0;
+globalThis.fetch = async () => new Response(rss, { status: 200 });
+const seen = [];
+const envE = { TALK_KV: kv, AI: { async run(m, input) { aiCalls++; seen.push(input.messages[0].content.includes('beers') ? 'unfiltered' : 'other'); return { response: aiOut }; } } };
+await worker.fetch(new Request('https://x/api/pack?key=cat:tech&edge=unfiltered'), envE, ctx);
+await worker.fetch(new Request('https://x/api/pack?key=cat:tech&edge=mild'), envE, ctx);
+await worker.fetch(new Request('https://x/api/pack?key=cat:tech&edge=mild'), envE, ctx);
+assert.equal(aiCalls, 2); assert.deepEqual(seen, ['unfiltered', 'other']);
+console.log('✅ edge tests passed');

@@ -164,6 +164,18 @@ input { font: inherit; color: inherit; }
 .shuffle { flex: none; height: 38px; padding: 0 12px; border-radius: 999px; background: var(--surface); border: 1.5px dashed var(--muted); font-weight: 800; font-size: .86rem; }
 .shuffle:active { transform: rotate(-6deg) scale(.95); }
 
+/* ---------- edge ---------- */
+.edge-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.edge-row .lbl { font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.echip { padding: 6px 11px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 700; font-size: .82rem; transition: transform .15s, background-color .2s; }
+.echip[aria-pressed="true"] { background: var(--danger); color: #fff; border-color: transparent; }
+.echip[data-edge="mild"][aria-pressed="true"] { background: var(--a2); color: var(--tag-ink); }
+.echip[data-edge="spicy"][aria-pressed="true"] { background: var(--a4); color: var(--tag-ink); }
+.echip[aria-pressed="true"] { animation: boop .3s cubic-bezier(.2,1.8,.4,1); }
+.app[data-tab="bingo"] .edge-row { display: none; }
+.cb-spicy { margin: 0; font-weight: 700; font-size: .95rem; line-height: 1.35; text-align: left; padding: 8px 12px; border-radius: 12px; border: 1.5px dashed var(--danger); }
+.cb-spicy b { font-family: var(--mono); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--danger); display: block; margin-bottom: 2px; }
+
 /* ---------- tabs ---------- */
 .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
 .tabs button { padding: 10px 4px; border-radius: 14px; font-weight: 800; font-size: .88rem; background: var(--surface); border: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; transition: transform .15s, background-color .2s; }
@@ -461,6 +473,7 @@ details.deeper[open] summary::before { transform: rotate(45deg); }
       <div class="humor" id="humorRow" role="group" aria-label="Humor style"></div>
       <button class="shuffle" id="shuffleBtn">🔀 Shuffle</button>
     </div>
+    <div class="edge-row" id="edgeRow" role="group" aria-label="How edgy"></div>
   </section>
 
   <div id="panel-brief">
@@ -609,6 +622,35 @@ const EXITS = [
   "I'll let you go. I know you're slammed today.",
   'Alright, I need to go be productive for at least ten minutes.',
 ];
+const EDGES = {
+  mild:       { label: 'Mild',       emoji: '🧁', blurb: 'Safe to say to your boss.', sample: '"Can\'t wait to pay four dollars to stare at a broken meter."' },
+  spicy:      { label: 'Spicy',      emoji: '🌶️', blurb: 'Sarcastic and a little rude. HR-proof.', sample: '"They can\'t fill a pothole in five years, but 300 meters showed up by Tuesday."' },
+  unfiltered: { label: 'Unfiltered', emoji: '🔥', blurb: 'For the coworker you get beers with. Mild swearing.', sample: '"The pothole on my street is from 2019, but sure, prioritize the damn meters."' },
+};
+const EDGE_QUIPS = {
+  mild: 'Mild mode. Your manager would approve. Probably.',
+  spicy: 'Spicy mode. Sharper jokes, still HR-proof.',
+  unfiltered: "Unfiltered. Know your audience. I'm not bailing you out.",
+};
+// Spicier comebacks, by COMEBACKS index: [spicy, unfiltered]
+const COMEBACKS_EDGE = [
+  ["Great, right up until my body remembered I'm not 25.", 'Spent two days recovering from five days of this place.'],
+  ["Busy enough that I've started scheduling my bathroom breaks.", "I'm buried. If I disappear, check under the inbox."],
+  ["Living someone's dream. Pretty sure it's the CEO's.", "Living the dream. The one where you show up to a test you didn't study for."],
+  ['Big plans. Mostly staring at my phone from a different chair.', "The plan is to not think about this place for 48 hours. I'll manage about 12."],
+  ['The weather here has the emotional stability of a group chat.', 'Weather here is like this place: no warning, no explanation, just vibes.'],
+  ['I watched it the way you watch a car slowly back into a pole.', "I saw it. I'd like my three hours back and a written apology."],
+  ['Running on cold brew and spite, mostly.', "It's going. Like a shopping cart with one busted wheel."],
+  ['Happy Friday. My motivation clocked out on Wednesday.', "Happy Friday. My give-a-damn left Wednesday and didn't say goodbye."],
+  ['Mondays should legally start at noon.', 'Mondays are proof the weekend was a lie we tell ourselves.'],
+  ["Mostly looking busy. I'm honestly great at it.", 'Same project, new deadline, and still nobody knows what it\'s for.'],
+  ['Like a hostage situation, but with a podcast.', 'It was hell. Everyone drove like they got their license out of a cereal box.'],
+  ["I know. I've been strategically avoiding this hallway.", "I've been hiding. Clearly not well enough."],
+];
+const EXITS_EDGE = {
+  spicy: ["I'm going to go stare at a spreadsheet and question my life choices.", 'I should get back before someone figures out I\'m good at small talk.', "Alright, I'm off to pretend this next meeting needed me."],
+  unfiltered: ['Welp, back to the hellscape. Good chat!', "I'm gonna go answer emails that should've been crimes.", 'Alright, back to earning just enough to keep coming back.'],
+};
 // "When they say..." cheat sheet. Each: prompt, safe answer, then dry / dad / cynical / observational.
 const COMEBACKS = [
   ['👋', 'How was your weekend?', 'Good! Pretty low-key. How about yours?',
@@ -747,6 +789,7 @@ const S = {
   skin: store.get('skin', 'nightshift'),
   mode: 'nod',
   humor: 'dry',
+  edge: 'spicy',
   shuffle: 0,
   packs: {},        // key -> { status: 'loading'|'ok'|'error', label, emoji, points, source, role }
   plan: [],         // [{ key, role }]
@@ -757,6 +800,7 @@ function activeProfile() { return profile || DEFAULT_PROFILE; }
 function applyProfileDefaults() {
   const p = activeProfile();
   S.humor = p.humor || 'dry';
+  S.edge = store.get('edge', null) || p.edge || 'spicy';
   S.mode = store.get('mode', null) || (TIMES[p.time] || TIMES.coffee).mode;
 }
 
@@ -897,10 +941,26 @@ function renderHeader() {
 function renderControls() {
   const seg = $('#modeSeg'); seg.dataset.v = S.mode;
   seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
+  renderEdge();
   const row = $('#humorRow'); row.replaceChildren();
   for (const [k, v] of Object.entries(HUMORS)) {
     row.append(h('button', { class: 'hchip', 'aria-pressed': String(S.humor === k), onclick: () => { S.humor = k; renderControls(); refreshLines(); if (S.tab === 'comebacks') renderComebacks(); } }, `${v.emoji} ${v.label}`));
   }
+}
+function renderEdge() {
+  const row = $('#edgeRow');
+  row.replaceChildren(h('span', { class: 'lbl', text: 'Edge' }), ...Object.entries(EDGES).map(([k, v]) =>
+    h('button', { class: 'echip', 'data-edge': k, 'aria-pressed': String(S.edge === k), title: v.blurb, onclick: () => setEdge(k) }, `${v.emoji} ${v.label}`)));
+}
+function setEdge(k) {
+  if (k === S.edge) return;
+  S.edge = k; store.set('edge', k);
+  if (profile) { profile = { ...profile, edge: k }; store.set('profile', profile); }
+  renderEdge();
+  if (k === 'unfiltered') mood('panic', 1200); else { mood('happy', 1200); jump(); }
+  say(EDGE_QUIPS[k] + (S.demo ? ' (Kicks in once it\'s live.)' : ''), 3200);
+  if (S.tab === 'comebacks') renderComebacks();
+  if (!S.demo) loadPacks();
 }
 $('#modeSeg').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-mode]'); if (!b || b.dataset.mode === S.mode) return;
@@ -1004,7 +1064,7 @@ async function loadPacks() {
   const day = editionKey();
   S.edition = day;
   const cache = store.get('packs', null);
-  const cached = cache && cache.day === day ? cache.data : {};
+  const cached = cache && cache.day === `${day}|${S.edge}` ? cache.data : {};
   S.packs = {};
   for (const { key, role } of S.plan) {
     const [label, emoji] = labelFor(key);
@@ -1016,16 +1076,16 @@ async function loadPacks() {
   if (S.demo) return;
   await Promise.all(S.plan.filter(({ key }) => S.packs[key].status === 'loading').map(async ({ key, role }) => {
     try {
-      const r = await fetch(`/api/pack?key=${encodeURIComponent(key)}`);
+      const r = await fetch(`/api/pack?key=${encodeURIComponent(key)}&edge=${S.edge}`);
       if (!r.ok) throw new Error(r.status);
       const j = await r.json();
       S.packs[key] = { status: 'ok', label: j.label, emoji: j.emoji, source: j.source, points: j.points || [], role };
       const c = store.get('packs', null);
       const ed = j.edition || day;
-      const data = c && c.day === ed ? c.data : {};
+      const data = c && c.day === `${ed}|${S.edge}` ? c.data : {};
       if (j.points && j.points.length) {
         data[key] = { label: j.label, emoji: j.emoji, source: j.source, points: j.points };
-        store.set('packs', { day: ed, data });
+        store.set('packs', { day: `${ed}|${S.edge}`, data });
       }
     } catch {
       S.packs[key] = { ...S.packs[key], status: 'error', points: [] };
@@ -1203,7 +1263,7 @@ function openEject() {
   const followEl = h('p', { class: 'eject-follow', text: follow });
   const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); $('#ejectBtn').focus(); };
   const onKey = (e) => { if (e.key === 'Escape') close(); };
-  const escape = () => { lineEl.textContent = pick(EXITS); followEl.textContent = 'Then walk away with purpose. Holding a mug helps.'; $('.mono', card).textContent = '🚪 Exit strategy 🚪'; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; mood('happy', 1500); };
+  const escape = () => { lineEl.textContent = pick(S.edge === 'mild' ? EXITS : EXITS.concat(EXITS_EDGE[S.edge] || [], EXITS_EDGE[S.edge] || [])); followEl.textContent = 'Then walk away with purpose. Holding a mug helps.'; $('.mono', card).textContent = '🚪 Exit strategy 🚪'; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; mood('happy', 1500); };
   const again = () => { $('.mono', card).textContent = '🚨 Emergency small talk 🚨'; const [l, f] = ejectLine(); lineEl.textContent = l; followEl.textContent = f; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; };
   const card = h('div', { class: 'eject-card' },
     h('span', { class: 'mono', text: '🚨 Emergency small talk 🚨' }), lineEl, followEl,
@@ -1293,6 +1353,8 @@ function openSetup(start) {
       } else if (step === 3) {
         content.push(h('h2', { text: "What's your humor setting?" }), h('p', { class: 'lede', text: 'You can switch any time from the main screen.' }),
           h('div', { class: 'cards-pick' }, ...Object.entries(HUMORS).map(([k, v]) => h('button', { class: 'bigpick', 'aria-pressed': String(draft.humor === k), onclick: () => { draft.humor = k; draw(); } }, h('b', { text: `${v.emoji} ${v.label}` }), h('span', { text: v.sample })))),
+          h('div', { class: 'field', style: 'margin-top:16px' }, h('label', { text: 'How edgy?' }),
+            h('div', { class: 'cards-pick' }, ...Object.entries(EDGES).map(([k, v]) => h('button', { class: 'bigpick', 'aria-pressed': String((draft.edge || 'spicy') === k), onclick: () => { draft.edge = k; draw(); } }, h('b', { text: `${v.emoji} ${v.label}: ${v.blurb}` }), h('span', { text: v.sample }))))),
           h('div', { class: 'field', style: 'margin-top:16px' }, h('label', { text: 'Stuff you actually care about (up to 3)' }),
             draft.hobbies.length ? h('div', { class: 'picks' }, ...draft.hobbies.map((t) => h('button', { class: 'pick', 'aria-pressed': 'true', onclick: () => { toggle(draft.hobbies, t); draw(); } }, `${t} ✕`))) : null,
             addRow('fHobby', 'An industry or hobby', (v) => { if (!draft.hobbies.includes(v)) toggle(draft.hobbies, v, 3); }),
@@ -1310,7 +1372,7 @@ function openSetup(start) {
     function finish() {
       profile = { ...draft, teams: draft.teams.slice(0, 2), interests: draft.interests.slice(0, 4), hobbies: draft.hobbies.slice(0, 3) };
       store.set('profile', profile);
-      store.set('mode', null);
+      store.set('mode', null); store.set('edge', profile.edge || 'spicy');
       close();
       applyProfileDefaults(); renderControls(); renderHeader(); renderNotices();
       loadPacks(); loadWeather();
@@ -1374,6 +1436,7 @@ function renderComebacks() {
     h('div', { class: 'stack' }, ...COMEBACKS.map((c, i) => h('div', { class: 'cb', style: `--cat:var(${CAT_VARS[i % CAT_VARS.length]})` },
       h('p', { class: 'cb-q' }, h('span', { text: c[0] }), h('span', { text: `"${c[1]}"` })),
       h('button', { class: 'cb-a', style: 'text-align:left', onclick: () => copyText(c[hi]), text: c[hi] }),
+      S.edge !== 'mild' && COMEBACKS_EDGE[i] ? h('button', { class: 'cb-spicy', onclick: () => copyText(COMEBACKS_EDGE[i][S.edge === 'unfiltered' ? 1 : 0]) }, h('b', { text: S.edge === 'unfiltered' ? '🔥 Unfiltered' : '🌶️ Spicier' }), COMEBACKS_EDGE[i][S.edge === 'unfiltered' ? 1 : 0]) : null,
       h('p', { class: 'cb-safe' }, h('b', { text: 'Safe version' }), c[2])))));
 }
 
